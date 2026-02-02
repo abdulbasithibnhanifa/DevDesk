@@ -4,7 +4,7 @@ const User = require("../models/user");
 const bcrypt = require("bcryptjs");
 
 // REGISTER USER
-router.post("/register", async (req, res) => {
+router.post("/register", async (req, res, next) => {
     try {
         const { name, email, password } = req.body;
 
@@ -31,14 +31,14 @@ router.post("/register", async (req, res) => {
         email: user.email,
         });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 });
 
 const jwt = require("jsonwebtoken");
 
 // LOGIN USER
-router.post("/login", async (req, res) => {
+router.post("/login", async (req, res, next) => {
     try {
         const { email, password } = req.body;
 
@@ -70,7 +70,7 @@ router.post("/login", async (req, res) => {
         },
         });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
     });
 

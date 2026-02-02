@@ -2,34 +2,37 @@ const express = require("express");
 const router = express.Router();
 const Project = require("../models/project");
 const protect = require("../middleware/auth.middleware");
+const { body, validationResult } = require("express-validator");
 
 // CREATE PROJECT
-router.post("/", protect, async (req, res) => {
-    try {
+router.post(
+    "/",
+    protect,
+    body("title").notEmpty().withMessage("Title is required"),
+    async (req, res, next) => {
+        // ⛔ VALIDATION CHECK (FIRST THING)
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+        }
+
+        try {
         const project = await Project.create({
-        title: req.body.title,
-        description: req.body.description,
-        owner: req.user,
+            title: req.body.title,
+            description: req.body.description,
+            owner: req.user,
         });
 
         res.status(201).json(project);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+        } catch (error) {
+        next(error);
+        }
     }
-    });
+);
 
-    // GET USER PROJECTS
-    router.get("/", protect, async (req, res) => {
-    try {
-        const projects = await Project.find({ owner: req.user });
-        res.json(projects);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
 
 // UPDATE PROJECT
-router.put("/:id", protect, async (req, res) => {
+router.put("/:id", protect, async (req, res, next) => {
     try {
         const project = await Project.findOneAndUpdate(
         { _id: req.params.id, owner: req.user },
@@ -43,12 +46,12 @@ router.put("/:id", protect, async (req, res) => {
 
         res.json(project);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 });
 
 // DELETE PROJECT
-router.delete("/:id", protect, async (req, res) => {
+router.delete("/:id", protect, async (req, res, next) => {
     try {
         const project = await Project.findOneAndDelete({
         _id: req.params.id,
@@ -61,7 +64,7 @@ router.delete("/:id", protect, async (req, res) => {
 
         res.json({ message: "Project deleted" });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 });
 
