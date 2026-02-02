@@ -30,6 +30,16 @@ router.post(
     }
 );
 
+// GET ALL PROJECTS FOR LOGGED-IN USER
+router.get("/", protect, async (req, res, next) => {
+    try {
+        const projects = await Project.find({ owner: req.user });
+        res.json(projects);
+    } catch (error) {
+        next(error);
+    }
+});
+
 
 // UPDATE PROJECT
 router.put("/:id", protect, async (req, res, next) => {
