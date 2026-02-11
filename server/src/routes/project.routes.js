@@ -40,6 +40,24 @@ router.get("/", protect, async (req, res, next) => {
     }
 });
 
+// GET SINGLE PROJECT
+router.get("/:id", protect, async (req, res, next) => {
+    try {
+        const project = await Project.findOne({
+        _id: req.params.id,
+        owner: req.user,
+        });
+
+        if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+        }
+
+        res.json(project);
+    } catch (error) {
+        next(error);
+    }
+});
+
 
 // UPDATE PROJECT
 router.put("/:id", protect, async (req, res, next) => {
