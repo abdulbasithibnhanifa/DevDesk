@@ -24,9 +24,11 @@ const Register = () => {
             password,
         });
 
-        navigate("/login");
+        navigate("/verify", { state: { email } });
         } catch (err) {
-        setError("Registration failed");
+        setError(
+            err.response?.data?.message || "Registration failed"
+        );
         } finally {
         setLoading(false);
         }

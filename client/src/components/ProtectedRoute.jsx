@@ -7,7 +7,7 @@ const ProtectedRoute = ({ children }) => {
 
     if (loading) return <p>Checking authentication...</p>;
 
-    return user ? children : <Navigate to="/login" />;
+    return user ? children : <Navigate to="/login" replace />;
 };
 
 export default ProtectedRoute;
