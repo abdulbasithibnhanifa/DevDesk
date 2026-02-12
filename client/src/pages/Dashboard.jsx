@@ -78,12 +78,18 @@ const Dashboard = () => {
                             <small className="text-muted">Project Manager</small>
                         </div>
 
-                        <button
+                        <div className="d-flex gap-2">
+                            <Link to="/profile" className="btn btn-sm btn-outline-secondary">
+                            Profile
+                            </Link>
+
+                            <button
                             className="btn btn-sm btn-outline-danger"
                             onClick={handleLogout}
-                        >
+                            >
                             Logout
-                        </button>
+                            </button>
+                        </div>
                         </div>
 
                         {/* Error */}

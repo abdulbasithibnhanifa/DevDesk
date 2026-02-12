@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import { useLocation } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
 const Verify = () => {
     const navigate = useNavigate();
@@ -14,6 +15,7 @@ const Verify = () => {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
+    const { completeLogin } = useContext(AuthContext);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -21,10 +23,13 @@ const Verify = () => {
         setLoading(true);
         setError("");
 
-        await api.post("/auth/verify", { email, otp });
+        const res = await api.post("/auth/verify", { email, otp });
 
-        alert("Email verified successfully!");
-        navigate("/login");
+        // Save token
+        completeLogin(res.data);
+
+        // Redirect to dashboard
+        navigate("/", { replace: true });
 
         } catch (err) {
         setError("Invalid or expired OTP");

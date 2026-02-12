@@ -12,11 +12,34 @@ const Register = () => {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    const isStrongPassword = (password) => {
+        const strongRegex =
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+        return strongRegex.test(password);
+        };
+
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
         setLoading(true);
         setError("");
+
+        if (!isStrongPassword(password)) {
+            setError(
+                "Password must be at least 8 characters and include uppercase, lowercase, and a number"
+            );
+            return;
+        }
+
+        if (password !== confirmPassword) {
+        setError("Passwords do not match");
+        return;
+        }
 
         await api.post("/auth/register", {
             name,
@@ -55,39 +78,84 @@ const Register = () => {
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} method="post" autoComplete="on">
                     <div className="mb-3">
-                    <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Full Name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        required
-                    />
+                        <div className="mb-3">
+                            <label className="form-label">Name</label>
+                            <input
+                                name="name"
+                                autoComplete="name"
+                                className="form-control"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                required
+                            />
+                        </div>
                     </div>
 
                     <div className="mb-3">
-                    <input
-                        type="email"
-                        className="form-control"
-                        placeholder="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                    />
+                        <div className="mb-3">
+                            <label className="form-label">Email</label>
+                            <input
+                                type="email"
+                                name="username"
+                                autoComplete="username"
+                                className="form-control"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                            />
+                        </div>
                     </div>
 
                     <div className="mb-3">
-                    <input
-                        type="password"
-                        className="form-control"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
-                    </div>
+                            <label className="form-label">New Password</label>
+
+                            <div className="input-group">
+                                <input
+                                    type="password"
+                                    name="new-password"
+                                    autoComplete="new-password"
+                                    className="form-control"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                />
+
+                                <button
+                                type="button"
+                                className="btn btn-outline-secondary"
+                                onClick={() => setShowPassword(!showPassword)}
+                                >
+                                {showPassword ? "Hide" : "Show"}
+                                </button>
+                            </div>
+                        </div>
+
+
+                        <div className="mb-3">
+                            <label className="form-label">Confirm New Password</label>
+
+                            <div className="input-group">
+                                <input
+                                    type="password"
+                                    name="confirm-password"
+                                    autoComplete="new-password"
+                                    className="form-control"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    required
+                                />
+
+                                <button
+                                type="button"
+                                className="btn btn-outline-secondary"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                >
+                                {showConfirmPassword ? "Hide" : "Show"}
+                                </button>
+                            </div>
+                        </div>
 
                     <button
                     className="btn btn-primary w-100 mb-3"

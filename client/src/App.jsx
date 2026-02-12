@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import Verify from "./pages/Verify";
 import PublicRoute from "./components/PublicRoute";
+import Profile from "./pages/Profile";
 
 function App() {
   return (
@@ -41,6 +42,14 @@ function App() {
             }
           />
 
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/"

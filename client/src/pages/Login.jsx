@@ -11,6 +11,7 @@ const Login = () => {
 
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,27 +50,46 @@ const Login = () => {
                     </div>
                     )}
 
-                    <form onSubmit={handleSubmit}>
+                    <form onSubmit={handleSubmit} method="post" autoComplete="on">
                     <div className="mb-3">
-                        <input
-                        type="email"
-                        className="form-control"
-                        placeholder="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        />
+                        <div className="mb-3">
+                            <label className="form-label">Email</label>
+                            <input
+                                type="email"
+                                name="username"
+                                id="login-username"
+                                autoComplete="username"
+                                className="form-control"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                            />
+                        </div>
                     </div>
 
                     <div className="mb-3">
-                        <input
-                        type="password"
-                        className="form-control"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        />
+                        <label className="form-label">Password</label>
+
+                        <div className="input-group">
+                            <input
+                                type="password"   // IMPORTANT: keep password type initially
+                                name="password"
+                                id="login-password"
+                                autoComplete="current-password"
+                                className="form-control"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                            />
+
+                            <button
+                            type="button"
+                            className="btn btn-outline-secondary"
+                            onClick={() => setShowPassword(!showPassword)}
+                            >
+                            {showPassword ? "Hide" : "Show"}
+                            </button>
+                        </div>
                     </div>
 
                     <button
