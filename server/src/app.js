@@ -8,7 +8,12 @@ const taskRoutes = require("./routes/task.routes");
 const errorHandler = require("./middleware/error.middleware");
 
 // ✅ GLOBAL MIDDLEWARE (ALWAYS FIRST)
-app.use(cors());
+app.use(cors({
+    origin: process.env.CLIENT_URL || "*",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
 app.use(express.json());
 
 // Auth routes
