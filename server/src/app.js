@@ -9,7 +9,11 @@ const errorHandler = require("./middleware/error.middleware");
 
 // ✅ GLOBAL MIDDLEWARE (ALWAYS FIRST)
 app.use(cors({
-    origin: process.env.CLIENT_URL || "*",
+    origin: [
+        "http://localhost:5173", // Vite Dev
+        "http://localhost:4173", // Vite Preview
+        process.env.CLIENT_URL   // Production
+    ].filter(Boolean),
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"]

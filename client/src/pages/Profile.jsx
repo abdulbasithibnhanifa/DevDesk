@@ -2,7 +2,12 @@ import { useContext, useState, useEffect } from "react";
 import { AuthContext } from "../context/AuthContext";
 import api from "../api/axios";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
 
+/**
+ * Profile Component
+ * Allows the user to update their name/password or delete their account.
+ */
 const Profile = () => {
 
     const { user, setUser, logout } = useContext(AuthContext);
@@ -24,6 +29,11 @@ const Profile = () => {
         }
     }, [user]);
 
+    // --- Event Handlers ---
+
+    /**
+     * Updates user profile information.
+     */
     const handleUpdate = async (e) => {
         e.preventDefault();
         try {
@@ -59,12 +69,13 @@ const Profile = () => {
 
 
     return (
-        <div className="bg-light min-vh-100 py-5">
-            <div className="container">
+        <div className="min-vh-100">
+            <Navbar />
+            <div className="container py-5">
                 <div className="row justify-content-center">
-                    <div className="col-md-6">
+                    <div className="col-12 col-md-8 col-lg-6">
 
-                        <div className="card shadow p-4 border-0">
+                        <div className="card shadow-sm p-4 border-0">
                             <div className="d-flex justify-content-between align-items-center mb-3">
                                 <h4 className="fw-bold mb-0">My Profile</h4>
 
@@ -148,15 +159,25 @@ const Profile = () => {
                                 </div>
 
 
-                                <button className="btn btn-primary">
-                                    Update
-                                </button>
+                                <div className="d-grid gap-2">
+                                    <button className="btn btn-primary">
+                                        Update Profile
+                                    </button>
+                                </div>
+                            </form>
 
+                            <hr className="my-4" />
+
+                            <div className="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 className="text-danger fw-bold mb-1">Danger Zone</h6>
+                                    <small className="text-muted">Once deleted, your account cannot be recovered.</small>
+                                </div>
                                 <button
                                     type="button"
-                                    className="btn btn-danger ms-2"
+                                    className="btn btn-outline-danger"
                                     onClick={async () => {
-                                        if (!window.confirm("Are you sure you want to delete your account?")) {
+                                        if (!window.confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
                                             return;
                                         }
 
@@ -171,19 +192,7 @@ const Profile = () => {
                                 >
                                     Delete Account
                                 </button>
-
-
-                                <button
-                                    type="button"
-                                    className="btn btn-outline-danger ms-2"
-                                    onClick={() => {
-                                        logout();
-                                        navigate("/login", { replace: true });
-                                    }}
-                                >
-                                    Logout
-                                </button>
-                            </form>
+                            </div>
 
                         </div>
 

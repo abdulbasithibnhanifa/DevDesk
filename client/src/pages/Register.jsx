@@ -58,12 +58,12 @@ const Register = () => {
     };
 
     return (
-        <div className="bg-light min-vh-100 d-flex align-items-center">
+        <div className="min-vh-100 d-flex align-items-center">
             <div className="container">
                 <div className="row justify-content-center">
                     <div className="col-12 col-sm-10 col-md-6 col-lg-5 col-xl-4">
 
-                        <div className="card shadow border-0 p-4">
+                        <div className="card shadow-sm border-0 p-4">
 
                             <div className="text-center mb-4">
                                 <h4 className="fw-bold mb-1">DevDesk</h4>
