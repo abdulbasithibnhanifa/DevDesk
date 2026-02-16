@@ -72,7 +72,7 @@ const Login = () => {
 
                         <div className="input-group">
                             <input
-                                type="password"   // IMPORTANT: keep password type initially
+                                type={showPassword ? "text" : "password"}
                                 name="password"
                                 id="login-password"
                                 autoComplete="current-password"
