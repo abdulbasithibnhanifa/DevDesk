@@ -1,19 +1,35 @@
 const nodemailer = require("nodemailer");
+const dns = require("dns");
+const util = require("util");
+const resolve4 = util.promisify(dns.resolve4);
 
 const sendEmail = async (to, subject, text) => {
+    let host = "smtp.gmail.com";
+
+    // 🌍 Manually resolve to IPv4 to bypass Render's IPv6 preference
+    try {
+        const addresses = await resolve4("smtp.gmail.com");
+        if (addresses && addresses.length > 0) {
+            host = addresses[0];
+            console.log(`✅ IPv4 DNS Resolution Success: smtp.gmail.com -> ${host}`);
+        }
+    } catch (err) {
+        console.error("⚠️ DNS resolution failed, falling back to hostname:", err);
+    }
+
     const transporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
+        host: host, // Use the resolved IP if available
         port: 465,
-        family: 4, // Force IPv4
         secure: true, // Use SSL
         auth: {
             user: process.env.EMAIL_USER,
             pass: process.env.EMAIL_PASS,
         },
         tls: {
-            rejectUnauthorized: false // Note: strictly not recommended for production but helps debug
+            servername: "smtp.gmail.com", // ⚠️ CRITICAL: Must set servername when using IP address for correct SNI/Cert validation
+            rejectUnauthorized: false
         },
-        connectionTimeout: 10000, // 10 seconds
+        connectionTimeout: 10000,
         greetingTimeout: 5000,
         socketTimeout: 10000,
     });
@@ -23,7 +39,6 @@ const sendEmail = async (to, subject, text) => {
         console.log("SMTP connection verified");
     } catch (error) {
         console.error("SMTP verification failed:", error);
-        // Don't throw here, trying to send might still give a better error or work if verify is blocked specifically
     }
 
     try {
