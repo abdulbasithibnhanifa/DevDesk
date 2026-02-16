@@ -17,14 +17,14 @@ router.post("/register", async (req, res, next) => {
         if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(password)) {
             return res.status(400).json({
                 message:
-                "Password must be at least 8 characters and include uppercase, lowercase, and a number",
+                    "Password must be at least 8 characters and include uppercase, lowercase, and a number",
             });
         }
 
         // Check if user exists
         const userExists = await User.findOne({ email });
         if (userExists) {
-        return res.status(400).json({ message: "User already exists" });
+            return res.status(400).json({ message: "User already exists" });
         }
 
         // Hash password
@@ -33,10 +33,10 @@ router.post("/register", async (req, res, next) => {
 
         // Create user (not verified yet)
         const user = await User.create({
-        name,
-        email,
-        password: hashedPassword,
-        isVerified: false,
+            name,
+            email,
+            password: hashedPassword,
+            isVerified: false,
         });
 
         // Generate 6-digit OTP
@@ -55,40 +55,40 @@ router.post("/register", async (req, res, next) => {
 
         // Send OTP email
         await sendEmail(
-        user.email,
-        "DevDesk Email Verification",
-        `Your verification code is: ${otp}`
+            user.email,
+            "DevDesk Email Verification",
+            `Your verification code is: ${otp}`
         );
 
         res.status(201).json({
-        message: "User registered. OTP sent to email.",
+            message: "User registered. OTP sent to email.",
         });
 
     } catch (error) {
         next(error);
     }
-    });
+});
 
 
-    // ======================
-    // VERIFY EMAIL OTP
-    // ======================
-    router.post("/verify", async (req, res, next) => {
+// ======================
+// VERIFY EMAIL OTP
+// ======================
+router.post("/verify", async (req, res, next) => {
     try {
         const { email, otp } = req.body;
 
         const user = await User.findOne({ email });
 
         if (!user) {
-        return res.status(404).json({ message: "User not found" });
+            return res.status(404).json({ message: "User not found" });
         }
 
         if (
-        user.otp !== otp ||
-        !user.otpExpires ||
-        user.otpExpires < Date.now()
+            user.otp !== otp ||
+            !user.otpExpires ||
+            user.otpExpires < Date.now()
         ) {
-        return res.status(400).json({ message: "Invalid or expired OTP" });
+            return res.status(400).json({ message: "Invalid or expired OTP" });
         }
 
         user.isVerified = true;
@@ -100,74 +100,75 @@ router.post("/register", async (req, res, next) => {
 
         // Generate JWT after verification
         const token = jwt.sign(
-        { id: user._id },
-        process.env.JWT_SECRET,
-        { expiresIn: "1d" }
+            { id: user._id },
+            process.env.JWT_SECRET,
+            { expiresIn: "1d" }
         );
 
         res.json({
-        token,
-        user: {
-            id: user._id,
-            name: user.name,
-            email: user.email,
-        },
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+            },
         });
 
     } catch (error) {
         next(error);
     }
-    });
+});
 
 
-    // ======================
-    // LOGIN USER
-    // ======================
-    router.post("/login", async (req, res, next) => {
+// ======================
+// LOGIN USER
+// ======================
+router.post("/login", async (req, res, next) => {
     try {
         const { email, password } = req.body;
 
         const user = await User.findOne({ email });
 
         if (!user) {
-        return res.status(400).json({ message: "Invalid credentials" });
+            return res.status(400).json({ message: "Invalid credentials" });
         }
 
         // Check password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-        return res.status(400).json({ message: "Invalid credentials" });
+            return res.status(400).json({ message: "Invalid credentials" });
         }
 
         // Check verification
         if (!user.isVerified) {
-        return res.status(401).json({
-            message: "Please verify your email before logging in",
-        });
+            return res.status(401).json({
+                message: "Please verify your email before logging in",
+            });
         }
 
         // Create token
         const token = jwt.sign(
-        { id: user._id },
-        process.env.JWT_SECRET,
-        { expiresIn: "1d" }
+            { id: user._id },
+            process.env.JWT_SECRET,
+            { expiresIn: "1d" }
         );
 
         res.json({
-        token,
-        user: {
-            id: user._id,
-            name: user.name,
-            email: user.email,
-        },
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+            },
         });
 
     } catch (error) {
         next(error);
     }
+});
 
 // UPDATE PROFILE
-    router.put("/profile", protect, async (req, res) => {
+router.put("/profile", protect, async (req, res) => {
     const user = await User.findById(req.user);
 
     if (!user) {
@@ -178,29 +179,29 @@ router.post("/register", async (req, res, next) => {
 
     if (req.body.password) {
         if (
-        !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(
-            req.body.password
-        )
+            !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(
+                req.body.password
+            )
         ) {
-        return res.status(400).json({
-            message:
-            "Password must be at least 8 characters and include uppercase, lowercase, and a number",
-        });
+            return res.status(400).json({
+                message:
+                    "Password must be at least 8 characters and include uppercase, lowercase, and a number",
+            });
         }
 
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(
-        req.body.password,
-        salt
+            req.body.password,
+            salt
         );
     }
 
     await user.save();
 
     res.json({ message: "Profile updated" });
-    });
+});
 
-    // DELETE ACCOUNT
+// DELETE ACCOUNT
 router.delete("/profile", protect, async (req, res) => {
     await User.findByIdAndDelete(req.user);
 
@@ -216,8 +217,6 @@ router.get("/me", protect, async (req, res) => {
     }
 
     res.json(user);
-});
-
 });
 
 module.exports = router;
