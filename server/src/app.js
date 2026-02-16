@@ -10,9 +10,10 @@ const errorHandler = require("./middleware/error.middleware");
 // ✅ GLOBAL MIDDLEWARE (ALWAYS FIRST)
 app.use(cors({
     origin: [
-        "http://localhost:5173", // Vite Dev
-        "http://localhost:4173", // Vite Preview
-        process.env.CLIENT_URL   // Production
+        "http://localhost:5173",
+        "http://localhost:4173",
+        "https://dev-desk-app.vercel.app",
+        process.env.CLIENT_URL
     ].filter(Boolean),
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
