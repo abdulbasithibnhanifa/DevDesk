@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Project = require("../models/project");
+const Task = require("../models/task");
 const protect = require("../middleware/auth.middleware");
 const { body, validationResult } = require("express-validator");
 
@@ -13,19 +14,19 @@ router.post(
         // ⛔ VALIDATION CHECK (FIRST THING)
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+            return res.status(400).json({ errors: errors.array() });
         }
 
         try {
-        const project = await Project.create({
-            title: req.body.title,
-            description: req.body.description,
-            owner: req.user,
-        });
+            const project = await Project.create({
+                title: req.body.title,
+                description: req.body.description,
+                owner: req.user,
+            });
 
-        res.status(201).json(project);
+            res.status(201).json(project);
         } catch (error) {
-        next(error);
+            next(error);
         }
     }
 );
@@ -44,12 +45,12 @@ router.get("/", protect, async (req, res, next) => {
 router.get("/:id", protect, async (req, res, next) => {
     try {
         const project = await Project.findOne({
-        _id: req.params.id,
-        owner: req.user,
+            _id: req.params.id,
+            owner: req.user,
         });
 
         if (!project) {
-        return res.status(404).json({ message: "Project not found" });
+            return res.status(404).json({ message: "Project not found" });
         }
 
         res.json(project);
@@ -63,13 +64,13 @@ router.get("/:id", protect, async (req, res, next) => {
 router.put("/:id", protect, async (req, res, next) => {
     try {
         const project = await Project.findOneAndUpdate(
-        { _id: req.params.id, owner: req.user },
-        req.body,
-        { new: true }
+            { _id: req.params.id, owner: req.user },
+            req.body,
+            { new: true }
         );
 
         if (!project) {
-        return res.status(404).json({ message: "Project not found" });
+            return res.status(404).json({ message: "Project not found" });
         }
 
         res.json(project);
@@ -82,15 +83,18 @@ router.put("/:id", protect, async (req, res, next) => {
 router.delete("/:id", protect, async (req, res, next) => {
     try {
         const project = await Project.findOneAndDelete({
-        _id: req.params.id,
-        owner: req.user,
+            _id: req.params.id,
+            owner: req.user,
         });
 
         if (!project) {
-        return res.status(404).json({ message: "Project not found" });
+            return res.status(404).json({ message: "Project not found" });
         }
 
-        res.json({ message: "Project deleted" });
+        // 🗑️ CASCADE DELETE TASKS
+        await Task.deleteMany({ project: req.params.id });
+
+        res.json({ message: "Project and associated tasks deleted" });
     } catch (error) {
         next(error);
     }
