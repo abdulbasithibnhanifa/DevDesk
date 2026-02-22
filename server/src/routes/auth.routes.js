@@ -31,7 +31,7 @@ const generateTokensAndSetCookies = async (user, res) => {
     const cookieOptions = {
         httpOnly: true, // Prevents XSS attacks (JS cannot read)
         secure: process.env.NODE_ENV === "production", // HTTPS only in production
-        sameSite: "strict", // Prevents CSRF attacks
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "strict", // Prevents CSRF attacks, needs 'none' for cross-domain Vercel->Render
     };
 
     res.cookie("jwt", accessToken, {
@@ -190,7 +190,7 @@ router.post("/logout", async (req, res) => {
         const cookieOptions = {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
         };
 
         // Clear cookies
@@ -247,7 +247,7 @@ router.delete("/profile", protect, async (req, res) => {
     const cookieOptions = {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
     };
 
     // Clear cookies

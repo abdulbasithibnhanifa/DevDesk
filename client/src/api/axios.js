@@ -15,8 +15,8 @@ api.interceptors.response.use(
         // Any status codes that falls outside the range of 2xx cause this function to trigger
         const originalRequest = error.config;
 
-        // If the error is 401 (Unauthorized) and we haven't already retried this request
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // If the error is 401 (Unauthorized) and we haven't already retried this request, and it's not the refresh endpoint itself
+        if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== "/auth/refresh") {
             originalRequest._retry = true;
 
             try {
