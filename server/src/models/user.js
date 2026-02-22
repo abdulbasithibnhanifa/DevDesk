@@ -3,27 +3,17 @@ const mongoose = require("mongoose");
 const userSchema = new mongoose.Schema(
     {
         name: {
-        type: String,
-        required: true,
+            type: String,
+            required: true,
         },
         email: {
-        type: String,
-        required: true,
-        unique: true,
+            type: String,
+            required: true,
+            unique: true,
         },
         password: {
-        type: String,
-        required: true,
-        },
-        isVerified: {
-            type: Boolean,
-            default: false,
-        },
-        otp: String,
-        otpExpires: Date,
-        verificationExpires: {
-        type: Date,
-        expires: 0,
+            type: String,
+            required: true,
         },
     },
     { timestamps: true }

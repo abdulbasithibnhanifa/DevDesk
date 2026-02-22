@@ -1,9 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const User = require("../models/user");
+const Project = require("../models/project");
+const Task = require("../models/task");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const sendEmail = require("../utils/sendEmail");
 const protect = require("../middleware/auth.middleware");
 
 // ======================
@@ -31,37 +32,15 @@ router.post("/register", async (req, res, next) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // Create user (not verified yet)
+        // Create user
         const user = await User.create({
             name,
             email,
             password: hashedPassword,
-            isVerified: false,
         });
-
-        // Generate 6-digit OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-        // Expiry time (10 minutes from now)
-        const expiryTime = new Date(Date.now() + 10 * 60 * 1000);
-
-        // Save OTP + expiry
-        user.otp = otp;
-        user.otpExpires = expiryTime;
-        user.verificationExpires = expiryTime;
-
-        await user.save();
-
-
-        // Send OTP email
-        await sendEmail(
-            user.email,
-            "DevDesk Email Verification",
-            `Your verification code is: ${otp}`
-        );
 
         res.status(201).json({
-            message: "User registered. OTP sent to email.",
+            message: "User registered.",
         });
 
     } catch (error) {
@@ -69,55 +48,6 @@ router.post("/register", async (req, res, next) => {
     }
 });
 
-
-// ======================
-// VERIFY EMAIL OTP
-// ======================
-router.post("/verify", async (req, res, next) => {
-    try {
-        const { email, otp } = req.body;
-
-        const user = await User.findOne({ email });
-
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        if (
-            user.otp !== otp ||
-            !user.otpExpires ||
-            user.otpExpires < Date.now()
-        ) {
-            return res.status(400).json({ message: "Invalid or expired OTP" });
-        }
-
-        user.isVerified = true;
-        user.otp = undefined;
-        user.otpExpires = undefined;
-        user.verificationExpires = undefined;
-
-        await user.save();
-
-        // Generate JWT after verification
-        const token = jwt.sign(
-            { id: user._id },
-            process.env.JWT_SECRET,
-            { expiresIn: "1d" }
-        );
-
-        res.json({
-            token,
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-            },
-        });
-
-    } catch (error) {
-        next(error);
-    }
-});
 
 
 // ======================
@@ -139,12 +69,6 @@ router.post("/login", async (req, res, next) => {
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
-        // Check verification
-        if (!user.isVerified) {
-            return res.status(401).json({
-                message: "Please verify your email before logging in",
-            });
-        }
 
         // Create token
         const token = jwt.sign(
@@ -203,6 +127,8 @@ router.put("/profile", protect, async (req, res) => {
 
 // DELETE ACCOUNT
 router.delete("/profile", protect, async (req, res) => {
+    await Task.deleteMany({ owner: req.user });
+    await Project.deleteMany({ owner: req.user });
     await User.findByIdAndDelete(req.user);
 
     res.json({ message: "Account deleted successfully" });

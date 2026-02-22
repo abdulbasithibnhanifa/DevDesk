@@ -47,7 +47,7 @@ const Register = () => {
                 password,
             });
 
-            navigate("/verify", { state: { email } });
+            navigate("/login", { state: { message: "Registration successful. Please log in." } });
         } catch (err) {
             setError(
                 err.response?.data?.message || "Registration failed"
