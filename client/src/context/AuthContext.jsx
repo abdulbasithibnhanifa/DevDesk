@@ -12,20 +12,19 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
 
-    // Restore session on refresh
+    // Check session on initial load
     useEffect(() => {
-        const token = localStorage.getItem("token");
-
-        if (token) {
-            api.get("/auth/me")
-                .then((res) => {
-                    setUser(res.data);
-                })
-                .catch(() => {
-                    localStorage.removeItem("token");
-                    setUser(null);
-                });
-        }
+        // We no longer check for a token in localStorage.
+        // Instead, we optimistically ask the server if we are logged in.
+        // The browser will automatically send the HttpOnly cookie.
+        api.get("/auth/me")
+            .then((res) => {
+                setUser(res.data);
+            })
+            .catch(() => {
+                // If it fails (no cookie, or expired cookie that couldn't be refreshed)
+                setUser(null);
+            });
     }, []);
 
 
@@ -36,21 +35,28 @@ export const AuthProvider = ({ children }) => {
      */
     const login = async (email, password) => {
         const res = await api.post("/auth/login", { email, password });
-        localStorage.setItem("token", res.data.token);
+        // The server sets the HttpOnly cookies automatically. We just save the user data.
         setUser(res.data.user);
     };
 
     const completeLogin = (data) => {
-        localStorage.setItem("token", data.token);
+        // For auto-login after registration
         setUser(data.user);
     };
 
     /**
      * Clears user session and token.
      */
-    const logout = () => {
-        localStorage.removeItem("token");
-        setUser(null);
+    const logout = async () => {
+        try {
+            // Tell the server to clear the HttpOnly cookies
+            await api.post("/auth/logout");
+        } catch (error) {
+            console.error("Logout failed on server:", error);
+        } finally {
+            // Always clear the local user state
+            setUser(null);
+        }
     };
 
     return (

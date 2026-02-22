@@ -7,6 +7,47 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const protect = require("../middleware/auth.middleware");
 
+// Helper function to generate tokens and set cookies
+const generateTokensAndSetCookies = async (user, res) => {
+    // 1. Generate Access Token (short-lived)
+    const accessToken = jwt.sign(
+        { id: user._id },
+        process.env.JWT_SECRET,
+        { expiresIn: "15m" } // 15 minutes
+    );
+
+    // 2. Generate Refresh Token (long-lived)
+    const refreshToken = jwt.sign(
+        { id: user._id },
+        process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, // Fallback if no specific secret
+        { expiresIn: "7d" } // 7 days
+    );
+
+    // 3. Save Refresh Token to Database
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    // 4. Set Cookies
+    const cookieOptions = {
+        httpOnly: true, // Prevents XSS attacks (JS cannot read)
+        secure: process.env.NODE_ENV === "production", // HTTPS only in production
+        sameSite: "strict", // Prevents CSRF attacks
+    };
+
+    res.cookie("jwt", accessToken, {
+        ...cookieOptions,
+        maxAge: 15 * 60 * 1000, // 15 minutes in ms
+    });
+
+    res.cookie("refreshToken", refreshToken, {
+        ...cookieOptions,
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+    });
+
+    return { accessToken, refreshToken };
+};
+
+
 // ======================
 // REGISTER USER
 // ======================
@@ -39,8 +80,16 @@ router.post("/register", async (req, res, next) => {
             password: hashedPassword,
         });
 
+        // Auto-login upon registration
+        await generateTokensAndSetCookies(user, res);
+
         res.status(201).json({
-            message: "User registered.",
+            message: "User registered and logged in successfully.",
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+            }
         });
 
     } catch (error) {
@@ -69,16 +118,11 @@ router.post("/login", async (req, res, next) => {
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
-
-        // Create token
-        const token = jwt.sign(
-            { id: user._id },
-            process.env.JWT_SECRET,
-            { expiresIn: "1d" }
-        );
+        // Generate tokens and set cookies
+        await generateTokensAndSetCookies(user, res);
 
         res.json({
-            token,
+            message: "Logged in successfully",
             user: {
                 id: user._id,
                 name: user.name,
@@ -90,6 +134,75 @@ router.post("/login", async (req, res, next) => {
         next(error);
     }
 });
+
+
+// ======================
+// REFRESH TOKEN
+// ======================
+router.post("/refresh", async (req, res) => {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+        return res.status(401).json({ message: "No refresh token provided" });
+    }
+
+    try {
+        // Verify the refresh token
+        const decoded = jwt.verify(
+            refreshToken,
+            process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET
+        );
+
+        // Find the user and check if the refresh token matches the database
+        const user = await User.findById(decoded.id);
+
+        if (!user || user.refreshToken !== refreshToken) {
+            return res.status(403).json({ message: "Invalid refresh token" });
+        }
+
+        // Generate *new* access and refresh tokens (Rotation)
+        await generateTokensAndSetCookies(user, res);
+
+        res.json({ message: "Token refreshed successfully" });
+    } catch (error) {
+        console.error("Refresh token error:", error);
+        res.status(403).json({ message: "Invalid or expired refresh token" });
+    }
+});
+
+
+// ======================
+// LOGOUT USER
+// ======================
+router.post("/logout", async (req, res) => {
+    try {
+        const refreshToken = req.cookies.refreshToken;
+
+        if (refreshToken) {
+            // Find user by refresh token and clear it from DB
+            const user = await User.findOne({ refreshToken });
+            if (user) {
+                user.refreshToken = null;
+                await user.save();
+            }
+        }
+
+        const cookieOptions = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+        };
+
+        // Clear cookies
+        res.clearCookie("jwt", cookieOptions);
+        res.clearCookie("refreshToken", cookieOptions);
+
+        res.json({ message: "Logged out successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Server error during logout" });
+    }
+});
+
 
 // UPDATE PROFILE
 router.put("/profile", protect, async (req, res) => {
@@ -130,6 +243,16 @@ router.delete("/profile", protect, async (req, res) => {
     await Task.deleteMany({ owner: req.user });
     await Project.deleteMany({ owner: req.user });
     await User.findByIdAndDelete(req.user);
+
+    const cookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+    };
+
+    // Clear cookies
+    res.clearCookie("jwt", cookieOptions);
+    res.clearCookie("refreshToken", cookieOptions);
 
     res.json({ message: "Account deleted successfully" });
 });

@@ -19,6 +19,8 @@ const Tasks = () => {
     const [error, setError] = useState("");
     const [projectName, setProjectName] = useState("");
 
+    const [taskToDelete, setTaskToDelete] = useState(null);
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -32,7 +34,7 @@ const Tasks = () => {
                 const taskRes = await api.get(`/tasks/${projectId}`);
                 setTasks(taskRes.data);
 
-            } catch (err) {
+            } catch {
                 setError("Failed to load project data");
             } finally {
                 setLoading(false);
@@ -55,7 +57,7 @@ const Tasks = () => {
             const res = await api.post("/tasks", { title, projectId });
             setTasks([res.data, ...tasks]);
             setTitle("");
-        } catch (err) {
+        } catch {
             setError("Failed to create task");
         }
     };
@@ -67,17 +69,21 @@ const Tasks = () => {
         try {
             const res = await api.put(`/tasks/${id}`, { status });
             setTasks(tasks.map((t) => (t._id === id ? res.data : t)));
-        } catch (err) {
+        } catch {
             setError("Failed to update task");
         }
     };
 
-    const deleteTask = async (id) => {
+    const confirmDeleteTask = async () => {
+        if (!taskToDelete) return;
         try {
-            await api.delete(`/tasks/${id}`);
-            setTasks(tasks.filter((t) => t._id !== id));
-        } catch (err) {
+            await api.delete(`/tasks/${taskToDelete}`);
+            // Rapid state update instead of refetching for responsiveness
+            setTasks(tasks.filter(t => t._id !== taskToDelete));
+            setTaskToDelete(null);
+        } catch {
             setError("Failed to delete task");
+            setTaskToDelete(null);
         }
     };
 
@@ -177,7 +183,7 @@ const Tasks = () => {
                                                 )}
 
                                                 <button
-                                                    onClick={() => deleteTask(task._id)}
+                                                    onClick={() => setTaskToDelete(task._id)}
                                                     className="btn btn-sm btn-outline-danger"
                                                     title="Delete Task"
                                                 >
@@ -191,6 +197,27 @@ const Tasks = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* Custom Delete Confirmation Modal */}
+                {taskToDelete && (
+                    <div className="modal show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} tabIndex="-1">
+                        <div className="modal-dialog modal-dialog-centered">
+                            <div className="modal-content">
+                                <div className="modal-header border-0">
+                                    <h5 className="modal-title fw-bold text-danger">Delete Task</h5>
+                                    <button type="button" className="btn-close" onClick={() => setTaskToDelete(null)}></button>
+                                </div>
+                                <div className="modal-body">
+                                    <p>Are you sure you want to delete this task?</p>
+                                </div>
+                                <div className="modal-footer border-0">
+                                    <button type="button" className="btn btn-secondary" onClick={() => setTaskToDelete(null)}>Cancel</button>
+                                    <button type="button" className="btn btn-danger fw-bold" onClick={confirmDeleteTask}>Delete Task</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

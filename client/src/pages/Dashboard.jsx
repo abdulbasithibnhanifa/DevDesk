@@ -14,6 +14,8 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
+    const [projectToDelete, setProjectToDelete] = useState(null);
+
     // --- Fetch Logic ---
     useEffect(() => {
         const fetchProjects = async () => {
@@ -22,7 +24,7 @@ const Dashboard = () => {
                 setError("");
                 const res = await api.get("/projects");
                 setProjects(res.data);
-            } catch (err) {
+            } catch {
                 setError("Failed to load projects");
             } finally {
                 setLoading(false);
@@ -45,7 +47,7 @@ const Dashboard = () => {
             const res = await api.post("/projects", { title });
             setProjects([...projects, res.data]);
             setTitle("");
-        } catch (err) {
+        } catch {
             setError("Failed to create project");
         }
     };
@@ -53,12 +55,17 @@ const Dashboard = () => {
     /**
      * Deletes a project by ID.
      */
-    const deleteProject = async (id) => {
+    const confirmDeleteProject = async () => {
+        if (!projectToDelete) return;
         try {
-            await api.delete(`/projects/${id}`);
-            setProjects(projects.filter((p) => p._id !== id));
-        } catch (err) {
+            await api.delete(`/projects/${projectToDelete}`);
+            // Re-fetch projects to ensure the list is up-to-date after deletion
+            const res = await api.get("/projects");
+            setProjects(res.data);
+            setProjectToDelete(null);
+        } catch {
             setError("Failed to delete project");
+            setProjectToDelete(null);
         }
     };
 
@@ -131,7 +138,7 @@ const Dashboard = () => {
                                                 onClick={(e) => {
                                                     e.preventDefault();
                                                     e.stopPropagation();
-                                                    deleteProject(project._id);
+                                                    setProjectToDelete(project._id);
                                                 }}
                                                 className="btn btn-outline-danger btn-sm"
                                                 style={{ position: 'relative', zIndex: 2 }}
@@ -145,6 +152,27 @@ const Dashboard = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* Custom Delete Confirmation Modal */}
+                {projectToDelete && (
+                    <div className="modal show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} tabIndex="-1">
+                        <div className="modal-dialog modal-dialog-centered">
+                            <div className="modal-content">
+                                <div className="modal-header border-0">
+                                    <h5 className="modal-title fw-bold text-danger">Delete Project</h5>
+                                    <button type="button" className="btn-close" onClick={() => setProjectToDelete(null)}></button>
+                                </div>
+                                <div className="modal-body">
+                                    <p>Are you sure you want to delete this project? All associated tasks will be permanently removed.</p>
+                                </div>
+                                <div className="modal-footer border-0">
+                                    <button type="button" className="btn btn-secondary" onClick={() => setProjectToDelete(null)}>Cancel</button>
+                                    <button type="button" className="btn btn-danger fw-bold" onClick={confirmDeleteProject}>Delete Project</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -10,7 +10,7 @@ import Navbar from "../components/Navbar";
  */
 const Profile = () => {
 
-    const { user, setUser, logout } = useContext(AuthContext);
+    const { user, setUser } = useContext(AuthContext);
 
     const [name, setName] = useState(user?.name || "");
     const [password, setPassword] = useState("");
@@ -21,7 +21,7 @@ const Profile = () => {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     useEffect(() => {
         if (user?.name) {
@@ -64,6 +64,17 @@ const Profile = () => {
             setError(
                 err.response?.data?.message || "Update failed"
             );
+        }
+    };
+
+    const confirmDeleteAccount = async () => {
+        try {
+            await api.delete("/auth/profile");
+            setUser(null);
+            navigate("/register", { replace: true });
+        } catch (err) {
+            setError("Failed to delete account");
+            setShowDeleteModal(false);
         }
     };
 
@@ -176,28 +187,34 @@ const Profile = () => {
                                 <button
                                     type="button"
                                     className="btn btn-outline-danger"
-                                    onClick={async () => {
-                                        if (!window.confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
-                                            return;
-                                        }
-
-                                        try {
-                                            await api.delete("/auth/profile");
-                                            logout();
-                                            navigate("/register", { replace: true });
-                                        } catch (err) {
-                                            setError("Failed to delete account");
-                                        }
-                                    }}
+                                    onClick={() => setShowDeleteModal(true)}
                                 >
                                     Delete Account
                                 </button>
                             </div>
 
                         </div>
-
                     </div>
-                </div>
+                </div>                {/* Custom Delete Confirmation Modal */}
+                {showDeleteModal && (
+                    <div className="modal show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} tabIndex="-1">
+                        <div className="modal-dialog modal-dialog-centered">
+                            <div className="modal-content">
+                                <div className="modal-header border-0">
+                                    <h5 className="modal-title fw-bold text-danger">Delete Account</h5>
+                                    <button type="button" className="btn-close" onClick={() => setShowDeleteModal(false)}></button>
+                                </div>
+                                <div className="modal-body">
+                                    <p>Are you sure you want to permanently delete your account? This action cannot be undone.</p>
+                                </div>
+                                <div className="modal-footer border-0">
+                                    <button type="button" className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>Cancel</button>
+                                    <button type="button" className="btn btn-danger fw-bold" onClick={confirmDeleteAccount}>Permanently Delete Account</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

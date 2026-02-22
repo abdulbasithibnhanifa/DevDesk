@@ -1,9 +1,11 @@
+import { useContext } from "react";
 import { Navigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
 const PublicRoute = ({ children }) => {
-    const token = localStorage.getItem("token");
+    const { user } = useContext(AuthContext);
 
-    return token ? <Navigate to="/" replace /> : children;
+    return user ? <Navigate to="/" replace /> : children;
 };
 
 export default PublicRoute;
